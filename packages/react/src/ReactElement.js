@@ -157,7 +157,7 @@ const ReactElement = function(type, key, ref, self, source, owner, props) {
     // Record the component responsible for creating this element.
     _owner: owner,
   };
-
+  // 开发环境下,_self这些都不能枚举
   if (__DEV__) {
     // The validation flag is currently mutative. We put it on
     // an external backing store so that we can freeze the whole object.
@@ -344,6 +344,7 @@ export function jsxDEV(type, config, maybeKey, source, self) {
 /**
  * Create and return a new ReactElement of the given type.
  * See https://reactjs.org/docs/react-api.html#createelement
+ * config其实就是我们写在标签上的props，只不过包含了一些不能枚举的属性
  */
 export function createElement(type, config, children) {
   let propName;
@@ -356,6 +357,8 @@ export function createElement(type, config, children) {
   let self = null;
   let source = null;
 
+  // config 不为 null 时，说明标签上有属性，将属性添加到 props 中
+  // 其中，key 和 ref 为 react 提供的特殊属性，不加入到 props 中，而是用 key 和 ref 单独记录
   if (config != null) {
     if (hasValidRef(config)) {
       ref = config.ref;
@@ -364,13 +367,16 @@ export function createElement(type, config, children) {
         warnIfStringRefCannotBeAutoConverted(config);
       }
     }
+    // 有合法的 key 时，则给 key 赋值
     if (hasValidKey(config)) {
       key = '' + config.key;
     }
 
+    // self 和 source 是开发环境下对代码在编译器中位置等信息进行记录，用于开发环境下调试
     self = config.__self === undefined ? null : config.__self;
     source = config.__source === undefined ? null : config.__source;
     // Remaining properties are added to a new props object
+    // 将 config 中除 key、ref、__self、__source 之外的属性添加到 props 中
     for (propName in config) {
       if (
         hasOwnProperty.call(config, propName) &&
@@ -383,14 +389,25 @@ export function createElement(type, config, children) {
 
   // Children can be more than one argument, and those are transferred onto
   // the newly allocated props object.
+  // 将子节点添加到 props 的 children 属性上
   const childrenLength = arguments.length - 2;
   if (childrenLength === 1) {
+    // 共 3 个参数时表示只有一个子节点，直接将子节点赋值给 props 的 children 属性
+    /**
+     * const element = <div>123123</div>; 例如这种children就是一个常量值
+     * https://babeljs.io/repl/#?browsers=defaults%2C%20not%20ie%2011%2C%20not%20ie_mob%2011&build=&builtIns=false&corejs=3.6&spec=false&loose=false&code_lz=MYewdgzgLgBApgGzgWzmWBeGAeAJgSwDcA-ARgCYBmCy7AegJIG4AoUSWdqAQ3zDgBOMLLhDAArqnQA6AOZwoAUSRSoAIQCeASVwAKFjBgByASBBQjLAJSsASnG7AoAEQDyAWWkC0uQbsQoaFAANDBcvPwCNixAA&debug=false&forceAllTransforms=false&modules=false&shippedProposals=false&circleciRepo=&evaluate=false&fileSize=false&timeTravel=false&sourceType=module&lineWrap=true&presets=react&prettier=false&targets=&version=7.15.6&externalPlugins=&assumptions=%7B%7D
+     */
     props.children = children;
   } else if (childrenLength > 1) {
+    // 3 个以上参数时表示有多个子节点，将子节点 push 到一个数组中然后将数组赋值给 props 的 children
+    /**
+     * const element = <div><p>123213</p><p></p></div>; 例如这种就有多个，children会是一个数组
+     */
     const childArray = Array(childrenLength);
     for (let i = 0; i < childrenLength; i++) {
       childArray[i] = arguments[i + 2];
     }
+    // 开发环境下冻结 childArray，防止被随意修改
     if (__DEV__) {
       if (Object.freeze) {
         Object.freeze(childArray);
@@ -400,6 +417,8 @@ export function createElement(type, config, children) {
   }
 
   // Resolve default props
+  // 如果有 defaultProps，对其遍历并且将用户在标签上未对其手动设置属性添加进 props 中
+  // 此处针对 class 组件类型
   if (type && type.defaultProps) {
     const defaultProps = type.defaultProps;
     for (propName in defaultProps) {
@@ -408,6 +427,10 @@ export function createElement(type, config, children) {
       }
     }
   }
+
+
+  // key 和 ref 不挂载到 props 上
+  // 开发环境下若想通过 props.key 或者 props.ref 获取则 warning
   if (__DEV__) {
     if (key || ref) {
       const displayName =
@@ -422,6 +445,9 @@ export function createElement(type, config, children) {
       }
     }
   }
+
+  // 调用ReactElement创建元素并返回。ReactElement 主要是在开发环境下通过 Object.defineProperty
+  // 将 _store、_self、_source 设置为不可枚举，提高 element 比较时的性能：
   return ReactElement(
     type,
     key,
