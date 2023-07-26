@@ -261,6 +261,7 @@ function commitBeforeMutationLifeCycles(
               }
             }
           }
+          // 在这里调用getSnapshotBeforeUpdate
           const snapshot = instance.getSnapshotBeforeUpdate(
             finishedWork.elementType === finishedWork.type
               ? prevProps

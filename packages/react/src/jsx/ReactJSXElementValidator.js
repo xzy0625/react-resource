@@ -308,6 +308,7 @@ export function jsxWithValidation(
 
     // We warn in this case but don't throw. We expect the element creation to
     // succeed and there will likely be errors in render.
+    // 在这里校验是不是合法的react元素，如果不是合法的就报错。
     if (!validType) {
       let info = '';
       if (

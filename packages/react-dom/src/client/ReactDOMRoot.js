@@ -68,6 +68,7 @@ function ReactDOMBlockingRoot(
   tag: RootTag,
   options: void | RootOptions,
 ) {
+  // _internalRoot
   this._internalRoot = createRootImpl(container, tag, options);
 }
 
@@ -117,6 +118,7 @@ ReactDOMRoot.prototype.unmount = ReactDOMBlockingRoot.prototype.unmount = functi
   });
 };
 
+// 创建Root
 function createRootImpl(
   container: Container,
   tag: RootTag,
@@ -131,6 +133,7 @@ function createRootImpl(
       options.hydrationOptions != null &&
       options.hydrationOptions.mutableSources) ||
     null;
+  // 创建root react/packages/react-reconciler/src/ReactFiberRoot.old.js
   const root = createContainer(container, tag, hydrate, hydrationCallbacks);
   markContainerAsRoot(root.current, container);
   const containerNodeType = container.nodeType;

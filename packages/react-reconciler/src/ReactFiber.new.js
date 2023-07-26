@@ -144,8 +144,8 @@ function FiberNode(
 
   // Effects
   this.flags = NoFlags;
-  this.subtreeFlags = NoFlags;
-  this.deletions = null;
+  this.subtreeFlags = NoFlags; // 当前子树的副作用状态
+  this.deletions = null; // 要删除的子fiber
 
   this.lanes = NoLanes;
   this.childLanes = NoLanes;

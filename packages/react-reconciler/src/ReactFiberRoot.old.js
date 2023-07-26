@@ -80,6 +80,8 @@ function FiberRootNode(containerInfo, tag, hydrate) {
   }
 }
 
+// 创建了fiberRoot，是整个应用的跟节点，同时创建了 root fiber，是当前的dom节点
+// 关于fiberRoot和rootfiber https://juejin.cn/post/7009941427639549960
 export function createFiberRoot(
   containerInfo: any,
   tag: RootTag,
@@ -93,8 +95,10 @@ export function createFiberRoot(
 
   // Cyclic construction. This cheats the type system right now because
   // stateNode is any.
+
   const uninitializedFiber = createHostRootFiber(tag);
-  root.current = uninitializedFiber;
+  // 让 rootFiber 的 stateNode 字段指向了 fiberRoot，fiberRoot 的 current 字段指向了 rootFiber。从而一颗最原始的 fiber 树根节点就创建完成了：
+  root.current = uninitializedFiber; // 通过current的指向来确定current fiber树
   uninitializedFiber.stateNode = root;
 
   initializeUpdateQueue(uninitializedFiber);

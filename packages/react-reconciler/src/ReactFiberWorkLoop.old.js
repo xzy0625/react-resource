@@ -962,6 +962,7 @@ function markRootSuspended(root, suspendedLanes) {
 
 // This is the entry point for synchronous tasks that don't go
 // through Scheduler
+// 最终会调用到renderRootSync -> renderRootSync -> workLoopSync -> performUnitOfWork
 function performSyncWorkOnRoot(root) {
   invariant(
     (executionContext & (RenderContext | CommitContext)) === NoContext,
@@ -1035,6 +1036,7 @@ function performSyncWorkOnRoot(root) {
   const finishedWork: Fiber = (root.current.alternate: any);
   root.finishedWork = finishedWork;
   root.finishedLanes = lanes;
+  // commit阶段，将新生成的fiber树提交到页面中去
   commitRoot(root);
 
   // Before exiting, make sure there's a callback scheduled for the next
@@ -1652,6 +1654,7 @@ function performUnitOfWork(unitOfWork: Fiber): void {
     next = beginWork(current, unitOfWork, subtreeRenderLanes);
     stopProfilerTimerIfRunningAndRecordDelta(unitOfWork, true);
   } else {
+    // beigin阶段，这里主要是创建fiber结构  递归的递阶段
     next = beginWork(current, unitOfWork, subtreeRenderLanes);
   }
 
@@ -1659,6 +1662,7 @@ function performUnitOfWork(unitOfWork: Fiber): void {
   unitOfWork.memoizedProps = unitOfWork.pendingProps;
   if (next === null) {
     // If this doesn't spawn new work, complete the current work.
+    // 递归的归阶段，这里主要是生成effctList和创建真实的dom
     completeUnitOfWork(unitOfWork);
   } else {
     workInProgress = next;
@@ -1706,6 +1710,7 @@ function completeUnitOfWork(unitOfWork: Fiber): void {
       if (
         returnFiber !== null &&
         // Do not append effects to parents if a sibling failed to complete
+        // 判断有没有effectTag,这里用来执行effectList的操作
         (returnFiber.flags & Incomplete) === NoFlags
       ) {
         // Append all the effects of the subtree and this fiber onto the effect
@@ -1893,6 +1898,7 @@ function commitRootImpl(root, renderPriorityLevel) {
     // no more pending effects.
     // TODO: Might be better if `flushPassiveEffects` did not automatically
     // flush synchronous work at the end, to avoid factoring hazards like this.
+    // // 触发useEffect回调与其他同步任务。由于这些任务可能触发新的渲染，所以这里要一直遍历执行直到没有任务
     flushPassiveEffects();
   } while (rootWithPendingPassiveEffects !== null);
   flushRenderPhaseStrictModeWarningsInDEV();
@@ -1902,6 +1908,8 @@ function commitRootImpl(root, renderPriorityLevel) {
     'Should not already be working.',
   );
 
+  // root指 fiberRootNode
+  // root.finishedWork指当前应用的rootFiber
   const finishedWork = root.finishedWork;
   const lanes = root.finishedLanes;
 
@@ -1928,6 +1936,8 @@ function commitRootImpl(root, renderPriorityLevel) {
 
     return null;
   }
+
+  // 重置Scheduler绑定的回调函数
   root.finishedWork = null;
   root.finishedLanes = NoLanes;
 
@@ -1958,6 +1968,7 @@ function commitRootImpl(root, renderPriorityLevel) {
     }
   }
 
+  // 重置全局变量
   if (root === workInProgressRoot) {
     // We can reset these now that they are finished.
     workInProgressRoot = null;
@@ -1969,6 +1980,11 @@ function commitRootImpl(root, renderPriorityLevel) {
     // times out.
   }
 
+  // 将effectList赋值给firstEffect
+  // 由于每个fiber的effectList只包含他的子孙节点
+  // 所以根节点如果有effectTag则不会被包含进来
+  // 所以这里将有effectTag的根节点插入到effectList尾部
+  // 这样才能保证有effect的fiber都在effectList中
   // Get the list of effects.
   let firstEffect;
   if (finishedWork.flags > PerformedWork) {
@@ -1987,6 +2003,7 @@ function commitRootImpl(root, renderPriorityLevel) {
     firstEffect = finishedWork.firstEffect;
   }
 
+  // 这里是before mutation
   if (firstEffect !== null) {
     let previousLanePriority;
     if (decoupleUpdatePriorityFromScheduler) {
@@ -2023,6 +2040,7 @@ function commitRootImpl(root, renderPriorityLevel) {
         }
       } else {
         try {
+          // beforeMutation阶段的主函数
           commitBeforeMutationEffects();
         } catch (error) {
           invariant(nextEffect !== null, 'Should be working on an effect.');
@@ -2042,6 +2060,7 @@ function commitRootImpl(root, renderPriorityLevel) {
     }
 
     // The next phase is the mutation phase, where we mutate the host tree.
+    // moutation阶段
     nextEffect = firstEffect;
     do {
       if (__DEV__) {

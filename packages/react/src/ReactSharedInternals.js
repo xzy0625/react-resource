@@ -12,6 +12,7 @@ import ReactCurrentOwner from './ReactCurrentOwner';
 import ReactDebugCurrentFrame from './ReactDebugCurrentFrame';
 import IsSomeRendererActing from './IsSomeRendererActing';
 
+// 共享变量
 const ReactSharedInternals = {
   ReactCurrentDispatcher,
   ReactCurrentBatchConfig,

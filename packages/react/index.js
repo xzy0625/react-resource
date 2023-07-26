@@ -84,4 +84,4 @@ export {
   unstable_createFundamental,
   unstable_Scope,
   unstable_useOpaqueIdentifier,
-} from './src/React';
+} from './src/React'; // 这里导出给外部使用，但是React本身还导出了很多其他的东西

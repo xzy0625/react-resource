@@ -237,6 +237,9 @@ export function reconcileChildren(
   nextChildren: any,
   renderLanes: Lanes,
 ) {
+  // mount
+  // 值得一提的是，mountChildFibers与reconcileChildFibers这两个方法的逻辑基本一致。唯一的区别是：
+  // reconcileChildFibers会为生成的Fiber节点带上effectTag属性，而mountChildFibers不会。
   if (current === null) {
     // If this is a fresh new component that hasn't been rendered yet, we
     // won't update its child set by applying minimal side-effects. Instead,
@@ -249,6 +252,7 @@ export function reconcileChildren(
       renderLanes,
     );
   } else {
+    // update
     // If the current child is the same as the work in progress, it means that
     // we haven't yet started any work on these children. Therefore, we use
     // the clone algorithm to create a copy of all the current children.
@@ -3105,6 +3109,7 @@ function beginWork(
     }
   }
 
+  // 更新阶段，这个时候current是有值的
   if (current !== null) {
     const oldProps = current.memoizedProps;
     const newProps = workInProgress.pendingProps;
@@ -3318,6 +3323,7 @@ function beginWork(
   // move this assignment out of the common path and into each branch.
   workInProgress.lanes = NoLanes;
 
+  // mount阶段，这个时候currentFiber还没有值需要生成
   switch (workInProgress.tag) {
     case IndeterminateComponent: {
       return mountIndeterminateComponent(

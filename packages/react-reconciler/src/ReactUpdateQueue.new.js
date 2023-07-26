@@ -84,6 +84,9 @@
 // regardless of priority. Intermediate state may vary according to system
 // resources, but the final state is always the same.
 
+  hasForceUpdate = false;
+// updateQueue的文章  https://juejin.cn/post/7093082885363597349
+
 import type {Fiber} from './ReactInternalTypes';
 import type {Lanes, Lane} from './ReactFiberLane';
 
@@ -121,10 +124,11 @@ type SharedQueue<State> = {|
 |};
 
 export type UpdateQueue<State> = {|
-  baseState: State,
-  firstBaseUpdate: Update<State> | null,
-  lastBaseUpdate: Update<State> | null,
-  shared: SharedQueue<State>,
+  // 这三个属性主要是为了处理优先级
+  baseState: State, // baseState 指向被跳过的首个元素之前的所有 update 计算出的最终状态
+  firstBaseUpdate: Update<State> | null, // firstBaseUpdate 则是指向被跳过的首个 update
+  lastBaseUpdate: Update<State> | null, // 只要有 update 被跳过，那么它一定指向本次更新的 update 中的最后一个
+  shared: SharedQueue<State>, // 真正存放 update 的链表的属性,UpdateQueue 中多个 update 组成的链表是存放在 shared.pending 属性上。
   effects: Array<Update<State>> | null,
 |};
 
@@ -202,15 +206,21 @@ export function enqueueUpdate<State>(fiber: Fiber, update: Update<State>) {
     return;
   }
 
+  // updateQueue是一个环形链表
   const sharedQueue: SharedQueue<State> = (updateQueue: any).shared;
   const pending = sharedQueue.pending;
   if (pending === null) {
     // This is the first update. Create a circular list.
+    // 如果为空，说明是第一次
     update.next = update;
   } else {
+    // 否则这个 update 会被添加到链表称为尾节点
+    // 先将这个 update 指向头节点
+    // 再将当前的尾节点指向该节点
     update.next = pending.next;
     pending.next = update;
   }
+  // 将该 pending 设为该节点，sharedQueue.pending一直保存的是链表的尾节点，这样方便访问和插入
   sharedQueue.pending = update;
 
   if (__DEV__) {

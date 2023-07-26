@@ -6,11 +6,13 @@
  */
 
 import getComponentName from 'shared/getComponentName';
+
+// react/packages/react/src/ReactCurrentOwner.js 定义在这里面。 __SECRET_INTERNALS_DO_NOT_USE_OR_YOU_WILL_BE_FIRED表示共享变量
 import ReactSharedInternals from 'shared/ReactSharedInternals';
 
 import {REACT_ELEMENT_TYPE} from 'shared/ReactSymbols';
 
-const ReactCurrentOwner = ReactSharedInternals.ReactCurrentOwner;
+const ReactCurrentOwner = ReactSharedInternals.ReactCurrentOwner; // ReactCurrentOwner表示当前组件的拥有者
 
 const hasOwnProperty = Object.prototype.hasOwnProperty;
 
@@ -270,6 +272,7 @@ export function jsx(type, config, maybeKey) {
  * @param {object} props
  * @param {string} key
  */
+// 对key ref做处理，并生成reactElement
 export function jsxDEV(type, config, maybeKey, source, self) {
   if (__DEV__) {
     let propName;
@@ -300,6 +303,7 @@ export function jsxDEV(type, config, maybeKey, source, self) {
     }
 
     // Remaining properties are added to a new props object
+    // 给props赋值
     for (propName in config) {
       if (
         hasOwnProperty.call(config, propName) &&
@@ -319,6 +323,7 @@ export function jsxDEV(type, config, maybeKey, source, self) {
       }
     }
 
+    // 获取key或者ref会警告，并获取不到
     if (key || ref) {
       const displayName =
         typeof type === 'function'
@@ -332,6 +337,7 @@ export function jsxDEV(type, config, maybeKey, source, self) {
       }
     }
 
+    // 冻结属性，并且为某些属性配置
     return ReactElement(
       type,
       key,

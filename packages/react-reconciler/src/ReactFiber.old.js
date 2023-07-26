@@ -113,6 +113,7 @@ if (__DEV__) {
 
 let debugCounter = 1;
 
+// Fiber类型，定义位于packages/react-reconciler/src/ReactInternalTypes.js
 function FiberNode(
   tag: WorkTag,
   pendingProps: mixed,
@@ -120,38 +121,44 @@ function FiberNode(
   mode: TypeOfMode,
 ) {
   // Instance
-  this.tag = tag;
-  this.key = key;
-  this.elementType = null;
-  this.type = null;
-  this.stateNode = null;
+  // 作为静态数据
+  this.tag = tag; // 组件的类型，取决于react的元素类型
+  this.key = key; // key和type主要用于在diff过程中决定fiber是否可以复用
+  this.elementType = null; // 元素类型
+  this.type = null; // 定义与此fiber关联的功能或类。对于组件，它指向构造函数；对于DOM元素，它指定HTML tag
+  this.stateNode = null; // 真实的dom节点，用于记录当前 fiber 所对应的真实 dom 节点或者当前虚拟组件的实例，这么做的原因第一是为了实现 Ref ，第二是为了实现真实 dom 的跟踪。
 
   // Fiber
+  // // fiber 链表树相关
   this.return = null;
   this.child = null;
   this.sibling = null;
-  this.index = 0;
+  this.index = 0; // 在父fiber下面的子fiber中的下标
 
   this.ref = null;
 
-  this.pendingProps = pendingProps;
-  this.memoizedProps = null;
-  this.updateQueue = null;
-  this.memoizedState = null;
-  this.dependencies = null;
+  // 工作单元，用于计算 state 和 props 渲染
+  this.pendingProps = pendingProps; // 本次渲染需要使用的 props
+  this.memoizedProps = null; // 上次渲染使用的 props
+  this.updateQueue = null; // 用于状态更新，回调函数，DOM更新的队列，这是一个updateQueue实例
+  this.memoizedState = null; // 上次渲染后state的状态
+  this.dependencies = null; // contexts、events 等依赖
 
   this.mode = mode;
 
   // Effects
-  this.flags = NoFlags;
-  this.nextEffect = null;
+  // 副作用相关
+  this.flags = NoFlags; // 记录更新时当前 fiber 的副作用(删除、更新、替换等)状态
+  this.nextEffect = null; //  下一个副作用的fiber
 
   this.firstEffect = null;
   this.lastEffect = null;
 
+  // 优先级相关
   this.lanes = NoLanes;
   this.childLanes = NoLanes;
 
+  // 指向 workInProgress fiber 树中对应的节点
   this.alternate = null;
 
   if (enableProfilerTimer) {

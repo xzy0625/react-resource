@@ -457,6 +457,7 @@ export function requestUpdateLane(fiber: Fiber): Lane {
 
   // TODO: Remove this dependency on the Scheduler priority.
   // To do that, we're replacing it with an update lane priority.
+  // 根据记录下的事件的优先级，获取任务调度的优先级
   const schedulerPriority = getCurrentPriorityLevel();
 
   // The old behavior was using the priority level of the Scheduler.
@@ -471,8 +472,10 @@ export function requestUpdateLane(fiber: Fiber): Lane {
     (executionContext & DiscreteEventContext) !== NoContext &&
     schedulerPriority === UserBlockingSchedulerPriority
   ) {
+    // 如果是用户阻塞级别的事件，则通过InputDiscreteLanePriority 计算更新的优先级 lane
     lane = findUpdateLane(InputDiscreteLanePriority, currentEventWipLanes);
   } else {
+    // 否则依据事件的优先级计算 schedulerLanePriority
     const schedulerLanePriority = schedulerPriorityToLanePriority(
       schedulerPriority,
     );
@@ -497,6 +500,7 @@ export function requestUpdateLane(fiber: Fiber): Lane {
       }
     }
 
+    // 根据计算得到的 schedulerLanePriority，计算更新的优先级 lane
     lane = findUpdateLane(schedulerLanePriority, currentEventWipLanes);
   }
 
@@ -530,9 +534,11 @@ export function scheduleUpdateOnFiber(
   lane: Lane,
   eventTime: number,
 ) {
+  // 这里检测循环跟新，超过50次就当作是死循环了。直接设置更新次数为0
   checkForNestedUpdates();
   warnAboutRenderPhaseUpdatesInDEV(fiber);
 
+  // 标记更新
   const root = markUpdateLaneFromFiberToRoot(fiber, lane);
   if (root === null) {
     warnAboutUpdateOnUnmountedFiberInDEV(fiber);
@@ -585,6 +591,8 @@ export function scheduleUpdateOnFiber(
       // This is a legacy edge case. The initial mount of a ReactDOM.render-ed
       // root inside of batchedUpdates should be synchronous, but layout updates
       // should be deferred until the end of the batch.
+      // batchedUpdates 内部的 root 应该是同步的，但是布局更新
+      // 应推迟到批次结束。
       performSyncWorkOnRoot(root);
     } else {
       ensureRootIsScheduled(root, eventTime);
@@ -617,6 +625,7 @@ export function scheduleUpdateOnFiber(
       }
     }
     // Schedule other updates after in case the callback is sync.
+    // 如果是异步的，则调用ensureRootIsScheduled执行可中断的更新
     ensureRootIsScheduled(root, eventTime);
     schedulePendingInteractions(root, lane);
   }

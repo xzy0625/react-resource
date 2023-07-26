@@ -117,6 +117,7 @@ function legacyCreateRootFromDOMContainer(
   const shouldHydrate =
     forceHydrate || shouldHydrateDueToLegacyHeuristic(container);
   // First clear any existing content.
+  // SSR相关
   if (!shouldHydrate) {
     let warned = false;
     let rootSibling;
@@ -149,6 +150,7 @@ function legacyCreateRootFromDOMContainer(
     }
   }
 
+  // 创建根fiber react/packages/react-dom/src/client/ReactDOMRoot.js
   return createLegacyRoot(
     container,
     shouldHydrate
@@ -188,6 +190,7 @@ function legacyRenderSubtreeIntoContainer(
   // member of intersection type." Whyyyyyy.
   let root: RootType = (container._reactRootContainer: any);
   let fiberRoot;
+  // 通过有没有root来判断是第一次挂载还是更新
   if (!root) {
     // Initial mount
     root = container._reactRootContainer = legacyCreateRootFromDOMContainer(
@@ -203,6 +206,11 @@ function legacyRenderSubtreeIntoContainer(
       };
     }
     // Initial mount should not be batched.
+    /**
+     * 在 React 中，初始挂载是指第一次将组件渲染到 DOM 中。通常情况下，React 会将一批更新操作进行批处理，以优化性能。这意味着 React 可能会将多个更新操作合并成一次更新，然后一次性地应用到 DOM 中。
+       然而，"Initial mount should not be batched." 的意思是在初始挂载时，React 不应该对更新操作进行批处理。这是因为在初始挂载时，组件的状态和 DOM 结构可能会发生重大变化，如果被批处理，可能会导致一些副作用或不一致的行为。
+       因此，在初始挂载时，React 会确保更新操作不会被批处理，而是立即应用到 DOM 中，以确保正确的初次渲染。
+     */
     unbatchedUpdates(() => {
       updateContainer(children, fiberRoot, parentComponent, callback);
     });
@@ -216,6 +224,7 @@ function legacyRenderSubtreeIntoContainer(
       };
     }
     // Update
+    // 批量执行更新
     updateContainer(children, fiberRoot, parentComponent, callback);
   }
   return getPublicRootInstance(fiberRoot);
@@ -284,6 +293,7 @@ export function hydrate(
   );
 }
 
+// 调用Render函数
 export function render(
   element: React$Element<any>,
   container: Container,

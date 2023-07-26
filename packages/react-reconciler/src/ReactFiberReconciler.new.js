@@ -265,6 +265,7 @@ export function updateContainer(
       warnIfNotScopedWithMatchingAct(current);
     }
   }
+  // 获取优先级
   const lane = requestUpdateLane(current);
 
   if (enableSchedulingProfiler) {
@@ -295,6 +296,7 @@ export function updateContainer(
     }
   }
 
+  // 创建更新对象
   const update = createUpdate(eventTime, lane);
   // Caution: React DevTools currently depends on this property
   // being called "element".
@@ -314,7 +316,9 @@ export function updateContainer(
     update.callback = callback;
   }
 
+  // 塞入更新队列，这个
   enqueueUpdate(current, update);
+  // 协调阶段
   scheduleUpdateOnFiber(current, lane, eventTime);
 
   return lane;
